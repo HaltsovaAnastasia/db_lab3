@@ -1,5 +1,6 @@
 from database import engine
-from weather import Base
+from database import engine
+from models.weather import Base
 
 
 def init_db():

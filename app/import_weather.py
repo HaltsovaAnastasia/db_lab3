@@ -11,19 +11,20 @@ def main():
     csv_path = project_root / "data" / "GlobalWeatherRepository.csv"
 
     if not csv_path.exists():
-        print(f"File wasn't found': {csv_path}")
+        print(f"File not found: {csv_path}")
         return
 
-    print("Reading CSV...")
+    print("Reading CSV file...")
     df = pd.read_csv(csv_path)
 
-    df = df.head(1000) #remove later
+    # Temporary limit for testing (remove in final version)
+    df = df.head(1000)
 
     session = SessionLocal()
     repository = WeatherRepository(session)
 
     try:
-        print("Importing...")
+        print("Importing data into database...")
 
         weather_records = []
 
@@ -47,7 +48,7 @@ def main():
         repository.add_all(weather_records)
         repository.commit()
 
-        print("Import finished successfuly.")
+        print("Import completed successfully.")
 
     except Exception as e:
         repository.rollback()
