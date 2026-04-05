@@ -3,6 +3,7 @@ import pandas as pd
 
 from database import SessionLocal
 from models.weather import Weather
+from repositories.weather_repository import WeatherRepository
 
 
 def main():
@@ -16,12 +17,15 @@ def main():
     print("Reading CSV...")
     df = pd.read_csv(csv_path)
 
-    df = df.head(1000) #change later
+    df = df.head(1000) #remove later
 
     session = SessionLocal()
+    repository = WeatherRepository(session)
 
     try:
-        print("Import to database...")
+        print("Importing...")
+
+        weather_records = []
 
         for _, row in df.iterrows():
             weather = Weather(
@@ -38,13 +42,15 @@ def main():
                 wind_direction=row["wind_direction"],
                 gust_kph=row["gust_kph"],
             )
-            session.add(weather)
+            weather_records.append(weather)
 
-        session.commit()
-        print("Success.")
+        repository.add_all(weather_records)
+        repository.commit()
+
+        print("Import finished successfuly.")
 
     except Exception as e:
-        session.rollback()
+        repository.rollback()
         print("Error during import:")
         print(e)
 
