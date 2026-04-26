@@ -1,42 +1,25 @@
-from datetime import date, datetime, time
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import datetime
+from app.db import SessionLocal
+from app.models.weather import Weather
+from app.models.air_conditions import AirConditions
 
-from models.weather import Weather
 
+def get_weather_by_country_and_date(country: str, date_str: str):
+    session = SessionLocal()
 
-class WeatherRepository:
-    def __init__(self, session: Session):
-        self.session = session
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
-    def add(self, weather: Weather) -> None:
-        self.session.add(weather)
-
-    def add_all(self, weather_records: list[Weather]) -> None:
-        self.session.add_all(weather_records)
-
-    def commit(self) -> None:
-        self.session.commit()
-
-    def rollback(self) -> None:
-        self.session.rollback()
-
-    def get_all(self) -> list[Weather]:
-        return self.session.query(Weather).all()
-
-    def get_by_country(self, country: str) -> list[Weather]:
-        return (
-            self.session.query(Weather)
-            .filter(Weather.country == country)
+        results = (
+            session.query(Weather, AirConditions)
+            .join(AirConditions, AirConditions.weather_id == Weather.id)
+            .filter(func.lower(Weather.country) == country.lower())
+            .filter(func.date(Weather.last_updated) == date_obj)
             .all()
         )
 
-    def get_by_country_and_date(self, country: str, target_date: date) -> list[Weather]:
-        return (
-            self.session.query(Weather)
-            .filter(
-                Weather.country == country,
-                Weather.last_updated >= datetime.combine(target_date, time.min),
-                Weather.last_updated <= datetime.combine(target_date, time.max),
-            )
-            .all()
-        )
+        return results
+
+    finally:
+        session.close()
